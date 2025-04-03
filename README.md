@@ -132,7 +132,9 @@ Location: `~/.claude/claude_desktop_config.json` (macOS/Linux) or `%USERPROFILE%
 ```
 
 use `which python` to find python path
+
 use `pwd` inside cloned repository to get the path. Don't forget to add `confluence.py` in the end.
+
 Location: `~/.cursor/mcp.json` (macOS/Linux) or `%USERPROFILE%\.cursor\config.json` (Windows)
 
 ## Error Handling
