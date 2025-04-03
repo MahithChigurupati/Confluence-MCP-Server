@@ -110,9 +110,8 @@ response = await list_pages_in_space(
 {
   "mcpServers": {
     "confluence": {
-      "command": "python",
-      "args": ["confluence.py"],
-      "cwd": "/path/to/Confluence-MCP-Server"
+      "command": "python path",
+      "args": ["/path/to/Confluence-MCP-Server/confluence.py"]
     }
   }
 }
@@ -125,14 +124,15 @@ Location: `~/.claude/claude_desktop_config.json` (macOS/Linux) or `%USERPROFILE%
 {
   "mcpServers": {
     "confluence": {
-      "command": "python",
-      "args": ["confluence.py"],
-      "cwd": "/path/to/Confluence-MCP-Server"
+      "command": "python path",
+      "args": ["/path/to/Confluence-MCP-Server/confluence.py"]
     }
   }
 }
 ```
 
+use `which python` to find python path
+use `pwd` inside cloned repository to get the path. Don't forget to add `confluence.py` in the end.
 Location: `~/.cursor/mcp.json` (macOS/Linux) or `%USERPROFILE%\.cursor\config.json` (Windows)
 
 ## Error Handling
