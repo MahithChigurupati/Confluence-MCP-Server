@@ -1,5 +1,7 @@
 # Confluence MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@MahithChigurupati/confluence-mcp-server)](https://smithery.ai/server/@MahithChigurupati/confluence-mcp-server)
+
 A FastMCP-based server that provides seamless integration with Confluence's REST API, enabling programmatic access to Confluence spaces, pages, and content search functionality.
 
 ## Key Features
@@ -18,6 +20,16 @@ A FastMCP-based server that provides seamless integration with Confluence's REST
 - Valid Confluence API token
 
 ## Installation
+
+### Installing via Smithery
+
+To install confluence-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@MahithChigurupati/confluence-mcp-server):
+
+```bash
+npx -y @smithery/cli install @MahithChigurupati/confluence-mcp-server --client claude
+```
+
+### Manual Installation
 
 1. **Clone the Repository**
    ```bash
