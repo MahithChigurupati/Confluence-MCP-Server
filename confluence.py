@@ -1,12 +1,12 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
 import httpx
 import sys
 from urllib.parse import quote
 import base64
-
 import os
 from dotenv import load_dotenv
+import signal
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,6 +15,7 @@ load_dotenv()
 mcp = FastMCP("confluence")
 
 # Constants
+mcp.settings.port = int(os.getenv("PORT"))
 CONFLUENCE_BASE_URL = os.getenv("CONFLUENCE_BASE_URL")
 USERNAME = os.getenv("USERNAME")
 API_TOKEN = os.getenv("API_TOKEN")
@@ -22,6 +23,14 @@ API_TOKEN = os.getenv("API_TOKEN")
 # Ensure required environment variables are set
 if not CONFLUENCE_BASE_URL or not USERNAME or not API_TOKEN:
     raise ValueError("Missing required environment variables. Please check your .env file.")
+
+# Define a signal handler function
+def signal_handler(sig, frame):
+    print('Shutting down server...')
+    sys.exit(0)
+
+# Register the signal handler for SIGINT
+signal.signal(signal.SIGINT, signal_handler)
 
 async def make_confluence_request(url: str, method: str = "GET", params: dict = None) -> dict[str, Any] | None:
     """Make a request to the Confluence API with proper error handling."""
@@ -79,11 +88,11 @@ async def list_spaces(
     result = []
     for space in data.get("results", []):
         space_info = f"""
-Space: {space.get('name', 'Unknown')}
-Key: {space.get('key', 'Unknown')}
-Type: {space.get('type', 'Unknown')}
-Description: {space.get('description', {}).get('plain', {}).get('value', 'No description')}
-"""
+            Space: {space.get('name', 'Unknown')}
+            Key: {space.get('key', 'Unknown')}
+            Type: {space.get('type', 'Unknown')}
+            Description: {space.get('description', {}).get('plain', {}).get('value', 'No description')}
+            """
         result.append(space_info)
 
     return "\n---\n".join(result) if result else "No spaces found"
@@ -112,14 +121,14 @@ async def get_page_content(page_id: str) -> str:
     labels = [label.get("name") for label in data.get("metadata", {}).get("labels", {}).get("results", [])]
 
     return f"""
-Title: {title}
-Space: {space}
-Version: {version}
-Labels: {', '.join(labels) if labels else 'No labels'}
+        Title: {title}
+        Space: {space}
+        Version: {version}
+        Labels: {', '.join(labels) if labels else 'No labels'}
 
-Content:
-{content}
-"""
+        Content:
+        {content}
+        """
 
 @mcp.tool()
 async def search_content(
@@ -204,4 +213,4 @@ if __name__ == "__main__":
     print("Confluence MCP server starting...", file=sys.stderr)
     print("NOTE: Please set CONFLUENCE_BASE_URL and AUTH_TOKEN before using", file=sys.stderr)
     # Initialize and run the server
-    mcp.run(transport='stdio')
+    mcp.run(transport='sse')
