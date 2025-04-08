@@ -213,4 +213,4 @@ if __name__ == "__main__":
     print("Confluence MCP server starting...", file=sys.stderr)
     print("NOTE: Please set CONFLUENCE_BASE_URL and AUTH_TOKEN before using", file=sys.stderr)
     # Initialize and run the server
-    mcp.run(transport='sse')
+    mcp.run(transport='stdio')
