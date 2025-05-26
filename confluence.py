@@ -15,7 +15,16 @@ load_dotenv()
 mcp = FastMCP("confluence")
 
 # Constants
-mcp.settings.port = int(os.getenv("PORT"))
+try:
+    port_str = os.getenv("PORT")
+    if port_str is None:
+        print("PORT environment variable not set, defaulting to 8000.", file=sys.stderr)
+        mcp.settings.port = 8000
+    else:
+        mcp.settings.port = int(port_str)
+except ValueError:
+    print(f"Invalid PORT value: {port_str}. Defaulting to 8000.", file=sys.stderr)
+    mcp.settings.port = 8000
 CONFLUENCE_BASE_URL = os.getenv("CONFLUENCE_BASE_URL")
 USERNAME = os.getenv("USERNAME")
 API_TOKEN = os.getenv("API_TOKEN")
@@ -32,10 +41,10 @@ def signal_handler(sig, frame):
 # Register the signal handler for SIGINT
 signal.signal(signal.SIGINT, signal_handler)
 
-async def make_confluence_request(url: str, method: str = "GET", params: dict = None) -> dict[str, Any] | None:
+async def make_confluence_request(url: str, method: str = "GET", params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Make a request to the Confluence API with proper error handling."""
     if not USERNAME or not API_TOKEN:
-        return "Error: Please set your Confluence username and API token"
+        return {"error": "Please set your Confluence username and API token"}
 
     # Create basic auth header
     auth_string = f"{USERNAME}:{API_TOKEN}"
@@ -57,31 +66,34 @@ async def make_confluence_request(url: str, method: str = "GET", params: dict = 
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            return f"Error making request: {str(e)}"
+            return {"error": f"Error making request: {str(e)}"}
         except Exception as e:
-            return f"Unexpected error: {str(e)}"
+            return {"error": f"Unexpected error: {str(e)}"}
 
 @mcp.tool()
 async def list_spaces(
     query: Optional[str] = None,
-    limit: Optional[int] = 25
+    limit: Optional[int] = 25,
+    start: Optional[int] = 0
 ) -> str:
     """List available Confluence spaces with optional filtering.
     
     Args:
         query: Optional search text to filter spaces by name/description
         limit: Maximum number of spaces to return (default: 25)
+        start: Index of the first result to return (for pagination)
     """
     url = f"{CONFLUENCE_BASE_URL}/space"
     params = {
         "limit": limit,
+        "start": start,
         "expand": "description.plain,homepage"
     }
     if query:
-        params["spaceKey"] = query
+        params["name"] = query
 
     data = await make_confluence_request(url, params=params)
-    if isinstance(data, str):  # Error case
+    if "error" in data:
         return data
 
     # Format the response
@@ -110,7 +122,7 @@ async def get_page_content(page_id: str) -> str:
     }
 
     data = await make_confluence_request(url, params=params)
-    if isinstance(data, str):  # Error case
+    if "error" in data:
         return data
 
     # Format the response
@@ -134,7 +146,8 @@ async def get_page_content(page_id: str) -> str:
 async def search_content(
     query: str,
     space_key: Optional[str] = None,
-    limit: Optional[int] = 25
+    limit: Optional[int] = 25,
+    start: Optional[int] = 0
 ) -> str:
     """Search for content in Confluence.
     
@@ -142,6 +155,7 @@ async def search_content(
         query: Text to search for
         space_key: Optional space key to limit search to
         limit: Maximum number of results to return (default: 25)
+        start: Index of the first result to return (for pagination)
     """
     url = f"{CONFLUENCE_BASE_URL}/content/search"
     
@@ -152,11 +166,12 @@ async def search_content(
     params = {
         "cql": cql,
         "limit": limit,
+        "start": start,
         "expand": "space,version"
     }
 
     data = await make_confluence_request(url, params=params)
-    if isinstance(data, str):  # Error case
+    if "error" in data:
         return data
 
     # Format the response
@@ -176,24 +191,27 @@ Last Updated: {content.get('version', {}).get('when', 'Unknown')}
 @mcp.tool()
 async def list_pages_in_space(
     space_key: str,
-    limit: Optional[int] = 25
+    limit: Optional[int] = 25,
+    start: Optional[int] = 0
 ) -> str:
     """List all pages in a Confluence space.
     
     Args:
         space_key: The key of the space to list pages from
         limit: Maximum number of pages to return (default: 25)
+        start: Index of the first result to return (for pagination)
     """
     url = f"{CONFLUENCE_BASE_URL}/content"
     params = {
         "spaceKey": space_key,
         "type": "page",
         "limit": limit,
+        "start": start,
         "expand": "version"
     }
 
     data = await make_confluence_request(url, params=params)
-    if isinstance(data, str):  # Error case
+    if "error" in data:
         return data
 
     # Format the response
@@ -211,6 +229,6 @@ Last Updated: {page.get('version', {}).get('when', 'Unknown')}
 if __name__ == "__main__":
     # Add startup message
     print("Confluence MCP server starting...", file=sys.stderr)
-    print("NOTE: Please set CONFLUENCE_BASE_URL and AUTH_TOKEN before using", file=sys.stderr)
+    print("NOTE: Please ensure CONFLUENCE_BASE_URL, USERNAME, and API_TOKEN are set in your environment or .env file for the server to function correctly.", file=sys.stderr)
     # Initialize and run the server
     mcp.run(transport='stdio')

@@ -1,3 +1,5 @@
 httpx
 fastmcp
 python-dotenv
+pytest
+pytest-asyncio
